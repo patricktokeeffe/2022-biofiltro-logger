@@ -1,0 +1,175 @@
+' N2O Trailer Weather Logger
+' Patrick O'Keeffe <pokeeffe@wsu.edu>
+' https://github.com/patricktokeeffe/n2o-trailer-wx
+'
+'Copyright 2019  - Washington State University
+'
+'Permission is hereby granted, free of charge, to any person obtaining a 
+'copy of this software and associated documentation files (the "Software"), 
+'to deal in the Software without restriction, including without limitation 
+'the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+'and/or sell copies of the Software, and to permit persons to whom the 
+'Software is furnished to do so, subject to the following conditions:
+'
+'The above copyright notice and this permission notice shall be included in 
+'all copies or substantial portions of the Software.
+'
+'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+'FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
+'THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+'FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+'DEALINGS IN THE SOFTWARE.
+
+ConstTable(Constants) 'HINT named so can modify via LoggerNet
+  Const UTC_OFFSET = -8  'hrs, logger offset relative to UTC time
+  Const WXT_AZIMUTH = 0  'orientation w.r.t. True North, degrees
+  Const PAR_MULT As Float = 0 'unique sensor calibration, umol/(mV s m^2) - NEGATIVE for LI-190SA wiring convention
+EndConstTable
+
+Const WXT_COM = 7      'datalogger COM port
+Const WXT_SDI = 0      'SDI address
+
+Const PAR_DF = 1
+
+Const DOOR_INPUT = 8     'Control input port
+Const DOOR_POLARITY = False   'switch NO vs NC; change if reported door state is inverted
+
+Const NTP_SERVER = "0.us.pool.ntp.org"
+Const NTP_MAX_DRIFT = 500 'msec, max drift before adjusting clock
+
+Const SCAN_INT = 60    'seconds, also for data record interval
+Const DAYS_DATA = 365*5   'how long to store data ON THE CARD? (Ring fill)
+'HINT: internal memory keeps >45 days, 2GB card can support decades
+
+Const WXT_NVARS = 17
+Public WXT(WXT_NVARS)
+Alias WXT(1)  = WindDir_min
+Alias WXT(2)  = WindDir_avg
+Alias WXT(3)  = WindDir_max
+Alias WXT(4)  = WindSpeed_min
+Alias WXT(5)  = WindSpeed_avg
+Alias WXT(6)  = WindSpeed_max
+Alias WXT(7)  = Tmpr
+Alias WXT(8)  = RH
+Alias WXT(9)  = Press
+Alias WXT(10) = Rain_amt
+Alias WXT(11) = Rain_dur
+Alias WXT(12) = Rain_int
+Alias WXT(13) = Hail_amt
+Alias WXT(14) = Hail_dur
+Alias WXT(15) = Hail_int
+Alias WXT(16) = HeaterTmpr
+Alias WXT(17) = HeaterVolts
+Units WindDir_min = degrees
+Units WindDir_avg = degrees
+Units WindDir_max = degrees
+Units WindSpeed_min = m/s
+Units WindSpeed_avg = m/s
+Units WindSpeed_max = m/s
+Units Tmpr = degC
+Units RH = percent
+Units Press = hPa
+Units Rain_amt = mm
+Units Rain_dur = sec
+Units Rain_int = mm/hr
+Units Hail_amt = hits/cm^2
+Units Hail_dur = sec
+Units Hail_int = hits/cm^2/hr
+Units HeaterTmpr = degC
+Units HeaterVolts = Vdc
+
+Public PAR_density
+Units PAR_density = umol/(s m^2)
+
+Public LoggerTmpr
+Public PowerIn
+Units LoggerTmpr = degC
+Units PowerIn = Vdc
+
+Public DoorOpen = NAN 'As Boolean
+Public ClockError
+Units ClockError = msec
+
+
+DataTable (weather,True,-1)
+  CardOut(0,DAYS_DATA*86400/SCAN_INT)
+  DataInterval (0,SCAN_INT,Sec,10)
+  Sample(8,WXT(1),FP2)
+  Sample(1,WXT(9),IEEE4) 'Pressure overranges FP2 precision
+  Sample(8,WXT(10),FP2)
+  Sample(1,PAR_density,FP2) 'rounding PAR ok
+  Sample(1,LoggerTmpr,FP2)
+  Sample(1,PowerIn,FP2)
+  Sample(1,DoorOpen,FP2) 'HINT use FP2 to store NAN while sensor not installed
+  Sample(1,ClockError,FP2)
+  Sample(1,UTC_OFFSET,FP2)
+    FieldNames("UTC_OFFSET")
+    Units UTC_OFFSET = hours
+  Sample(1,WXT_AZIMUTH,FP2)
+    FieldNames("WXT_AZIMUTH")
+    Units WXT_AZIMUTH = degrees
+  Sample(1,PAR_MULT,IEEE4)
+    FieldNames("PAR_MULT")
+    Units PAR_MULT = umol/(mV s m^2)
+EndTable
+
+
+DisplayMenu("N2O Trailer",-1)
+  DisplayValue("WD, deg", WindDir_avg)
+  DisplayValue("WS, m/s", WindSpeed_avg)
+  DisplayValue("T, *C", Tmpr)
+  DisplayValue("RH, %", RH)
+  DisplayValue("P, hPa", Press)
+  DisplayValue("R_amt, mm", Rain_amt)
+  DisplayValue("R_dur, sec", Rain_dur)
+  DisplayValue("R_int, mm/hr", Rain_int)
+  DisplayValue("PAR (approx)", PAR_density)
+  DisplayValue("Logger T, *C", LoggerTmpr)
+  DisplayValue("PowerIn, Vdc", PowerIn)
+EndMenu
+
+
+BeginProg
+  Scan (SCAN_INT,Sec,0,0)
+    PanelTemp(LoggerTmpr,250)
+    Battery(PowerIn)
+    If (PowerIn > 12.6) Then
+      SW12(True) 'allow WXT heating
+    Else
+      SW12(False) 'disable on battery
+    EndIf
+    
+    Move(WXT(1),WXT_NVARS,NAN,1)
+    SDI12Recorder(WXT(1),WXT_COM,WXT_SDI,"R!",1,0)
+    If (WindDir_min <> NAN) Then
+      WindDir_min = (WindDir_min + WXT_AZIMUTH) MOD 360
+    EndIf
+    If (WindDir_avg <> NAN) Then
+      WindDir_avg = (WindDir_avg + WXT_AZIMUTH) MOD 360
+    EndIf
+    If (WindDir_max <> NAN) Then
+      WindDir_max = (WindDir_max + WXT_AZIMUTH) MOD 360
+    EndIf
+    
+    VoltDiff(PAR_density,1,mV25,PAR_DF,True,0,_60Hz,PAR_MULT,0)
+    If (PAR_density < 0) Then
+      PAR_density = 0
+    EndIf
+
+'    If (CheckPort(DOOR_INPUT) = DOOR_POLARITY) Then
+'      DoorOpen = 1
+'    Else
+'      DoorOpen = 0
+'    EndIf
+    
+    CallTable (weather)
+  NextScan
+  
+  SlowSequence 'HINT keep possible timeouts from impacting daq
+  Scan(5,Min,1,0)
+    ClockError = NetworkTimeProtocol(NTP_SERVER,UTC_OFFSET*3600,NTP_MAX_DRIFT)
+  NextScan
+EndProg
+
