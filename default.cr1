@@ -33,9 +33,6 @@ Const WXT_SDI = 0      'SDI address
 
 Const PAR_DF = 1
 
-Const DOOR_INPUT = 8     'Control input port
-Const DOOR_POLARITY = False   'switch NO vs NC; change if reported door state is inverted
-
 Const NTP_SERVER = "0.us.pool.ntp.org"
 Const NTP_MAX_DRIFT = 500 'msec, max drift before adjusting clock
 
@@ -88,7 +85,6 @@ Public PowerIn
 Units LoggerTmpr = degC
 Units PowerIn = Vdc
 
-Public DoorOpen = NAN 'As Boolean
 Public ClockError
 Units ClockError = msec
 
@@ -102,7 +98,6 @@ DataTable (weather,True,-1)
   Sample(1,PAR_density,FP2) 'rounding PAR ok
   Sample(1,LoggerTmpr,FP2)
   Sample(1,PowerIn,FP2)
-  Sample(1,DoorOpen,FP2) 'HINT use FP2 to store NAN while sensor not installed
   Sample(1,ClockError,FP2)
   Sample(1,UTC_OFFSET,FP2)
     FieldNames("UTC_OFFSET")
@@ -157,12 +152,6 @@ BeginProg
     If (PAR_density < 0) Then
       PAR_density = 0
     EndIf
-
-'    If (CheckPort(DOOR_INPUT) = DOOR_POLARITY) Then
-'      DoorOpen = 1
-'    Else
-'      DoorOpen = 0
-'    EndIf
     
     CallTable (weather)
   NextScan
