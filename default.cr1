@@ -213,6 +213,11 @@ DataTable (biofiltro_1min,True,-1)
   Sample(1,LoggerTmpr,FP2)
 EndTable
 
+DataTable(biofiltro_gps,True,-1) 'HINT for monitoring Dim'd vars
+  CardOut(0,DAYS_DATA*1440)
+  DataInterval(0,60,Sec,10)
+  Sample(15,gps_data(1),IEEE4)
+EndTable
 
 DisplayMenu("Trailer WA-25012E",-1)
   SubMenu("N2O/CO")
@@ -244,6 +249,15 @@ DisplayMenu("Trailer WA-25012E",-1)
     DisplayValue("P, hPa", Press)
     DisplayValue("Rain, mm", Rain_amt)
     DisplayValue("Hail, hits/cm^2", Hail_amt)
+  EndSubMenu
+  SubMenu("GPS")
+    DisplayValue("Lat deg", latitude_a)
+    DisplayValue("Lat min", latitude_b)
+    DisplayValue("Long deg", longitude_a)
+    DisplayValue("Long min", longitude_b)
+    DisplayValue("Mag decl.", magnetic_variation)
+    DisplayValue("Altitude", altitude)
+    DisplayValue("GPS Ready", gps_ready)
   EndSubMenu
   DisplayValue("PAR (approx)", PAR_density)
   DisplayValue("Logger T, *C", LoggerTmpr)
@@ -316,6 +330,7 @@ BeginProg
   Scan(1,Min,1,0)
     RealTime(rTime(1)) 'HINT for LGR CH4 message validation
     GPS(gps_data(1),GPS_COM,UTC_OFFSET*3600,MAX_DRIFT,nmea_sentence(1))
+    CallTable(biofiltro_gps)
   NextScan
 EndProg
 
