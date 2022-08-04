@@ -27,18 +27,83 @@ ConstTable(Constants) 'HINT named so can modify via LoggerNet
   Const PAR_MULT As Float = 0 'unique sensor calibration, umol/(mV s m^2) - NEGATIVE for LI-190SA wiring convention
 EndConstTable
 
+Const CH4_COM = Com2
+Const CH4_BAUD = 115200
+Const CH4_FMT = 3 '8/n/1
+Const CH4_BUFF = 800
+
+Const N2O_COM = Com3
+Const N2O_BAUD = 115200
+Const N2O_FMT = 3 '8/n/1
+Const N2O_BUFF = 800
+
 Const WXT_COM = 7      'datalogger COM port
 Const WXT_SDI = 0      'SDI address
 Public WXT_AZIMUTH As Float = 0  'orientation w.r.t. True North, degrees
 
 Const PAR_DF = 1
 
-Const GPS_COM = Com3
+Const GPS_COM = Com1
 Const MAX_DRIFT = 500 'ms
 
-Const SCAN_INT = 60    'seconds, also for data record interval
 Const DAYS_DATA = 365*5   'how long to store data ON THE CARD? (Ring fill)
 'HINT: internal memory keeps >45 days, 2GB card can support decades
+
+Dim disable_ugga As Boolean
+Dim ch4_year
+Dim rTime(9)
+Alias rTime(1) = this_year
+Dim ch4_record As String * 400
+Dim ugga(25) 'HINT use biofiltro_1Hz table instead of Public to monitor data
+'1: date (only year captured)   '2: time (only hour captured)
+Alias ugga(3)  = ugga_CH4        '4: CH4 s.d.
+Alias ugga(5)  = ugga_H2O        '6: H2O s.d.
+Alias ugga(7)  = ugga_CO2        '8: CO2 s.d.
+Alias ugga(9)  = ugga_CH4_dry    '10: CH4 dry s.d.
+Alias ugga(11) = ugga_CO2_dry    '12: CO2 dry s.d.
+Alias ugga(13) = ugga_gas_P      '14: gas P s.d.
+Alias ugga(15) = ugga_gas_T      '16: gas T s.d.
+Alias ugga(17) = ugga_self_T     '18: self T s.d.
+Alias ugga(19) = ugga_ringdown0  '20: ringdown #0 s.d.
+Alias ugga(21) = ugga_ringdown1  '22: ringdown #1 s.d.
+Alias ugga(23) = ugga_fit_flag   '24: MIU valve
+'25: MIU description
+Units ugga_CH4 = ppm
+Units ugga_H2O = ppm
+Units ugga_CO2 = ppm
+Units ugga_CH4_dry = ppm (dry)
+Units ugga_CO2_dry = ppm (dry)
+Units ugga_gas_P = Torr
+Units ugga_gas_T = degC
+Units ugga_self_T = degC
+Units ugga_ringdown0 = usec
+Units ugga_ringdown1 = usec
+Units ugga_fit_flag = arb
+
+Dim disable_n2o As Boolean
+Dim n2o_record As String * 400
+Dim n2oco(25) 'HINT use biofiltro_1Hz table instead of Public to monitor data
+'1: time (year),              '2: time (hour)
+Alias n2oco(3)  = lgr_CO      '4: CO se
+Alias n2oco(5)  = lgr_N2O     '6: N2O se
+Alias n2oco(7)  = lgr_H2O     '8: H2O se
+Alias n2oco(9)  = lgr_CO_dry  '10: CO dry se
+Alias n2oco(11) = lgr_N2O_dry '12: N2O dry se
+Alias n2oco(13) = lgr_gas_P   '14: GasP se
+Alias n2oco(15) = lgr_gas_T   '16: GasT se
+Alias n2oco(17) = lgr_amb_T   '18: AmbT se
+'19: LTC0 (volts)             '20: LTCO (volts) se
+'21: AIN5                     '22: AIN5 se
+'23: DetOff                   '24: DetOff se
+'25: Fit_Flag
+Units lgr_CO = ppb
+Units lgr_N2O = ppb
+Units lgr_H2O = ppm
+Units lgr_CO_dry = ppb (dry)
+Units lgr_N2O_dry = ppb (dry)
+Units lgr_gas_P = torr
+Units lgr_gas_T = degC
+Units lgr_amb_T = degC
 
 Const WXT_NVARS = 11
 Public WXT(WXT_NVARS)
@@ -106,34 +171,74 @@ Units gps_ready = unitless
 Units max_clock_change = ms
 Units nmbr_clock_change = samples
 
+DataTable (biofiltro_1hz,True,-1)
+  CardOut(0,DAYS_DATA*86400)
+  DataInterval(0,1,Sec,10)
+  Sample(1,lgr_CO,IEEE4)
+  Sample(1,lgr_N2O,IEEE4)
+  Sample(1,lgr_H2O,IEEE4)
+  Sample(1,lgr_CO_dry,IEEE4)
+  Sample(1,lgr_N2O_dry,IEEE4)
+  Sample(1,lgr_gas_P,IEEE4)
+  Sample(1,lgr_gas_T,IEEE4)
+  Sample(1,lgr_amb_T,IEEE4)
+  Sample(1,ugga_CH4,IEEE4)
+  Sample(1,ugga_H2O,IEEE4)
+  Sample(1,ugga_CO2,IEEE4)
+  Sample(1,ugga_CH4_dry,IEEE4)
+  Sample(1,ugga_CO2_dry,IEEE4)
+  Sample(1,ugga_gas_P,IEEE4)
+  Sample(1,ugga_gas_T,IEEE4)
+  Sample(1,ugga_self_T,IEEE4)
+EndTable
 
 DataTable (biofiltro_1min,True,-1)
   CardOut(0,DAYS_DATA*1440)
   DataInterval (0,60,Sec,10)
+  Average(1,lgr_gas_T,FP2,lgr_gas_T=NAN)
+  Average(1,lgr_amb_T,FP2,lgr_amb_T=NAN)
+  Average(1,ugga_gas_T,FP2,ugga_gas_T=NAN)
+  Average(1,ugga_self_T,FP2,ugga_self_T=NAN)
+  
   Median(1,WindDir,12,FP2,WindDir=NAN) 'average WD might be meaningless
   Average(1,WindDir,FP2,WindDir=NAN)
   Average(1,WindSpeed,FP2,WindSpeed=NAN)
+  Sample(1,WXT_AZIMUTH,FP2)
+    FieldNames("WXT_AZIMUTH")
+    Units WXT_AZIMUTH = degrees
   Average(1,Tmpr,FP2,Tmpr=NAN)
   Average(1,RH,FP2,RH=NAN)
   Average(1,Press,IEEE4,Press=NAN) 'overranges FP2 precision
   Totalize(1,Rain_amt,FP2,Rain_amt=NAN)
   Sample(1,PAR_density,FP2) 'rounding PAR ok
-  Sample(1,LoggerTmpr,FP2)
-  Sample(1,PowerIn,FP2)
-  Sample(1,ClockError,FP2)
-  Sample(1,UTC_OFFSET,FP2)
-    FieldNames("UTC_OFFSET")
-    Units UTC_OFFSET = hours
-  Sample(1,WXT_AZIMUTH,FP2)
-    FieldNames("WXT_AZIMUTH")
-    Units WXT_AZIMUTH = degrees
   Sample(1,PAR_MULT,IEEE4)
     FieldNames("PAR_MULT")
     Units PAR_MULT = umol/(mV s m^2)
+  Sample(1,LoggerTmpr,FP2)
 EndTable
 
 
-DisplayMenu("N2O Trailer",-1)
+DisplayMenu("Trailer WA-25012E",-1)
+  SubMenu("N2O/CO")
+    DisplayValue("N2O, ppb", lgr_N2O)
+    DisplayValue("N2O (dry)", lgr_N2O_dry)
+    DisplayValue("CO, ppb", lgr_CO)
+    DisplayValue("CO (dry)", lgr_CO_dry)
+    DisplayValue("H2O, ppm", lgr_H2O)
+    DisplayValue("Cell P", lgr_gas_P)
+    DisplayValue("Cell T", lgr_gas_T)
+    DisplayValue("Amb T", lgr_amb_T)
+  EndSubMenu
+  SubMenu("CH4/CO2")
+    DisplayValue("CH4, ppm", ugga_CH4)
+    DisplayValue("CH4 (dry)", ugga_CH4_dry)
+    DisplayValue("CO2, ppm", ugga_CO2)
+    DisplayValue("CO2 (dry)", ugga_CO2_dry)
+    DisplayValue("H2O, ppm", ugga_H2O)
+    DisplayValue("Cell P", ugga_gas_P)
+    DisplayValue("Cell T", ugga_gas_T)
+    DisplayValue("Self T", ugga_self_T)
+  EndSubMenu
   SubMenu("WXT510")
     MenuItem("Azimuth", WXT_AZIMUTH)
     DisplayValue("WD, deg", WindDir)
@@ -153,7 +258,44 @@ EndMenu
 
 
 BeginProg
-  Scan (SCAN_INT,Sec,0,0)
+  SerialOpen(N2O_COM,N2O_BAUD,N2O_FMT,0,N2O_BUFF)
+  SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
+  
+  Scan (500,mSec,0,0)
+    SerialIn(n2o_record,N2O_COM,5,&h0A,N2O_BUFF)
+    If (Len(n2o_record)) Then
+      SplitStr(n2oco(1),n2o_record,", ",25,6)
+      disable_n2o = NOT(n2oco(25) = 3) 'HACK - assume Fit_Flag always 3
+      n2o_record = ""
+      If (NOT disable_n2o) Then
+        lgr_CO *= 1000     'ppm --> ppb
+        lgr_N2O *= 1000
+        lgr_CO_dry *= 1000
+        lgr_N2O_dry *= 1000
+      EndIf
+    'ElseIf (n2oco(25) = NAN) Then
+    '  disable_ugga = True
+    'Else
+    '  Move(n2oco(1),25,NAN,1)
+    EndIf
+
+    SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
+    If (Len(ch4_record)) Then
+      SplitStr(ugga(1),ch4_record,", ",25,6)
+      ch4_year = ugga(1) 'convert string->float
+      disable_ugga = NOT(ch4_year = THIS_YEAR)
+    'ElseIf (ch4_year = NAN) Then
+    '  disable_ugga = True
+    'Else
+    '  Move(ugga(1),25,NAN,1)
+    '  ch4_year = NAN
+    EndIf
+    
+    CallTable(biofiltro_1hz)
+  NextScan
+  
+  SlowSequence
+  Scan (5,Sec,0,0)
     PanelTemp(LoggerTmpr,250)
     Battery(PowerIn)
     If (PowerIn > 12.6) Then
@@ -176,8 +318,9 @@ BeginProg
     CallTable (biofiltro_1min)
   NextScan
   
-  SlowSequence 'HINT keep possible timeouts from impacting daq
-  Scan(5,Min,1,0)
+  SlowSequence
+  Scan(1,Min,1,0)
+    RealTime(rTime(1)) 'HINT for LGR CH4 message validation
     GPS(gps_data(1),GPS_COM,UTC_OFFSET*3600,MAX_DRIFT,nmea_sentence(1))
   NextScan
 EndProg
