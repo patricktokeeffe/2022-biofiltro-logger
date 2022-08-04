@@ -43,6 +43,8 @@ Public WXT_AZIMUTH As Float = 0  'orientation w.r.t. True North, degrees
 
 Const PAR_DF = 1
 
+Const AC_TYPEK_DF = 4
+
 Const GPS_COM = Com1
 Const MAX_DRIFT = 500 'ms
 
@@ -134,6 +136,9 @@ Public PowerIn
 Units LoggerTmpr = degC
 Units PowerIn = Vdc
 
+Public AC_Tmpr
+Units AC_Tmpr = degC
+
 Dim nmea_sentence(2) As String * 110
 Public gps_data(15)
 Alias gps_data(1) = latitude_a         'Degrees latitude (+ = North; - = South)
@@ -211,6 +216,7 @@ DataTable (biofiltro_1min,True,-1)
     FieldNames("PAR_MULT")
     Units PAR_MULT = umol/(mV s m^2)
   Sample(1,LoggerTmpr,FP2)
+  Average(1,AC_Tmpr,FP2,AC_Tmpr=NAN)
 EndTable
 
 DataTable(biofiltro_gps,True,-1) 'HINT for monitoring Dim'd vars
@@ -220,6 +226,8 @@ DataTable(biofiltro_gps,True,-1) 'HINT for monitoring Dim'd vars
 EndTable
 
 DisplayMenu("Trailer WA-25012E",-1)
+  DisplayValue("AC T, *C", AC_Tmpr)
+  DisplayValue("Logger T, *C", LoggerTmpr)
   SubMenu("N2O/CO")
     DisplayValue("N2O, ppb", lgr_N2O)
     DisplayValue("N2O (dry)", lgr_N2O_dry)
@@ -260,7 +268,6 @@ DisplayMenu("Trailer WA-25012E",-1)
     DisplayValue("GPS Ready", gps_ready)
   EndSubMenu
   DisplayValue("PAR (approx)", PAR_density)
-  DisplayValue("Logger T, *C", LoggerTmpr)
   DisplayValue("PowerIn, Vdc", PowerIn)
 EndMenu
 
@@ -311,6 +318,7 @@ BeginProg
     Else
       SW12(False) 'disable on battery
     EndIf
+    TCDiff(AC_Tmpr,1,mV2_5,AC_TYPEK_DF,TypeK,LoggerTmpr,True,0,_60Hz,1,0)
     
     'Move(WXT(1),WXT_NVARS,NAN,1) 'XXXX is this why sometimes wind shows up as NAN for several minutes?
     SDI12Recorder(WXT(1),WXT_COM,WXT_SDI,"R!",1,0,-1)
