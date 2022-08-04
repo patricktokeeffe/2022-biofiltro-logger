@@ -24,12 +24,12 @@
 
 ConstTable(Constants) 'HINT named so can modify via LoggerNet
   Const UTC_OFFSET = -8  'hrs, logger offset relative to UTC time
-  Const WXT_AZIMUTH = 0  'orientation w.r.t. True North, degrees
   Const PAR_MULT As Float = 0 'unique sensor calibration, umol/(mV s m^2) - NEGATIVE for LI-190SA wiring convention
 EndConstTable
 
 Const WXT_COM = 7      'datalogger COM port
 Const WXT_SDI = 0      'SDI address
+Public WXT_AZIMUTH As Float = 0  'orientation w.r.t. True North, degrees
 
 Const PAR_DF = 1
 
@@ -40,40 +40,28 @@ Const SCAN_INT = 60    'seconds, also for data record interval
 Const DAYS_DATA = 365*5   'how long to store data ON THE CARD? (Ring fill)
 'HINT: internal memory keeps >45 days, 2GB card can support decades
 
-Const WXT_NVARS = 17
+Const WXT_NVARS = 11
 Public WXT(WXT_NVARS)
-Alias WXT(1)  = WindDir_min
-Alias WXT(2)  = WindDir_avg
-Alias WXT(3)  = WindDir_max
-Alias WXT(4)  = WindSpeed_min
-Alias WXT(5)  = WindSpeed_avg
-Alias WXT(6)  = WindSpeed_max
-Alias WXT(7)  = Tmpr
-Alias WXT(8)  = RH
-Alias WXT(9)  = Press
-Alias WXT(10) = Rain_amt
-Alias WXT(11) = Rain_dur
-Alias WXT(12) = Rain_int
-Alias WXT(13) = Hail_amt
-Alias WXT(14) = Hail_dur
-Alias WXT(15) = Hail_int
-Alias WXT(16) = HeaterTmpr
-Alias WXT(17) = HeaterVolts
-Units WindDir_min = degrees
-Units WindDir_avg = degrees
-Units WindDir_max = degrees
-Units WindSpeed_min = m/s
-Units WindSpeed_avg = m/s
-Units WindSpeed_max = m/s
+Alias WXT(1)  = WindDir
+Alias WXT(2)  = WindSpeed
+Alias WXT(3)  = Tmpr
+Alias WXT(4)  = RH
+Alias WXT(5)  = Press
+Alias WXT(6) = Rain_amt
+Alias WXT(7) = Rain_dur
+Alias WXT(8) = Rain_int
+Alias WXT(9) = Rain_peak
+Alias WXT(10) = HeaterTmpr
+Alias WXT(11) = HeaterVolts
+Units WindDir = degrees
+Units WindSpeed = m/s
 Units Tmpr = degC
 Units RH = percent
 Units Press = hPa
 Units Rain_amt = mm
 Units Rain_dur = sec
 Units Rain_int = mm/hr
-Units Hail_amt = hits/cm^2
-Units Hail_dur = sec
-Units Hail_int = hits/cm^2/hr
+Units Rain_peak = mm/hr
 Units HeaterTmpr = degC
 Units HeaterVolts = Vdc
 
@@ -89,12 +77,16 @@ Public ClockError
 Units ClockError = msec
 
 
-DataTable (weather,True,-1)
-  CardOut(0,DAYS_DATA*86400/SCAN_INT)
-  DataInterval (0,SCAN_INT,Sec,10)
-  Sample(8,WXT(1),FP2)
-  Sample(1,WXT(9),IEEE4) 'Pressure overranges FP2 precision
-  Sample(8,WXT(10),FP2)
+DataTable (biofiltro_1min,True,-1)
+  CardOut(0,DAYS_DATA*1440)
+  DataInterval (0,60,Sec,10)
+  Median(1,WindDir,12,FP2,WindDir=NAN) 'average WD might be meaningless
+  Average(1,WindDir,FP2,WindDir=NAN)
+  Average(1,WindSpeed,FP2,WindSpeed=NAN)
+  Average(1,Tmpr,FP2,Tmpr=NAN)
+  Average(1,RH,FP2,RH=NAN)
+  Average(1,Press,IEEE4,Press=NAN) 'overranges FP2 precision
+  Totalize(1,Rain_amt,FP2,Rain_amt=NAN)
   Sample(1,PAR_density,FP2) 'rounding PAR ok
   Sample(1,LoggerTmpr,FP2)
   Sample(1,PowerIn,FP2)
@@ -112,14 +104,18 @@ EndTable
 
 
 DisplayMenu("N2O Trailer",-1)
-  DisplayValue("WD, deg", WindDir_avg)
-  DisplayValue("WS, m/s", WindSpeed_avg)
-  DisplayValue("T, *C", Tmpr)
-  DisplayValue("RH, %", RH)
-  DisplayValue("P, hPa", Press)
-  DisplayValue("R_amt, mm", Rain_amt)
-  DisplayValue("R_dur, sec", Rain_dur)
-  DisplayValue("R_int, mm/hr", Rain_int)
+  SubMenu("WXT510")
+    MenuItem("Azimuth", WXT_AZIMUTH)
+    DisplayValue("WD, deg", WindDir)
+    DisplayValue("WS, m/s", WindSpeed)
+    DisplayValue("T, *C", Tmpr)
+    DisplayValue("RH, %", RH)
+    DisplayValue("P, hPa", Press)
+    DisplayValue("R_amt, mm", Rain_amt)
+    DisplayValue("R_dur, sec", Rain_dur)
+    DisplayValue("R_int, mm/hr", Rain_int)
+    DisplayValue("R_peak, mm/hr", Rain_peak)
+  EndSubMenu
   DisplayValue("PAR (approx)", PAR_density)
   DisplayValue("Logger T, *C", LoggerTmpr)
   DisplayValue("PowerIn, Vdc", PowerIn)
@@ -138,14 +134,8 @@ BeginProg
     
     Move(WXT(1),WXT_NVARS,NAN,1)
     SDI12Recorder(WXT(1),WXT_COM,WXT_SDI,"R!",1,0)
-    If (WindDir_min <> NAN) Then
-      WindDir_min = (WindDir_min + WXT_AZIMUTH) MOD 360
-    EndIf
-    If (WindDir_avg <> NAN) Then
-      WindDir_avg = (WindDir_avg + WXT_AZIMUTH) MOD 360
-    EndIf
-    If (WindDir_max <> NAN) Then
-      WindDir_max = (WindDir_max + WXT_AZIMUTH) MOD 360
+    If (WindDir <> NAN) Then
+      WindDir = (WindDir + WXT_AZIMUTH) MOD 360
     EndIf
     
     VoltDiff(PAR_density,1,mV25,PAR_DF,True,0,_60Hz,PAR_MULT,0)
@@ -153,7 +143,7 @@ BeginProg
       PAR_density = 0
     EndIf
     
-    CallTable (weather)
+    CallTable (biofiltro_1min)
   NextScan
   
   SlowSequence 'HINT keep possible timeouts from impacting daq
