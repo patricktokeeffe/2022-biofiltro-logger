@@ -172,7 +172,7 @@ Units gps_ready = unitless
 Units max_clock_change = ms
 Units nmbr_clock_change = samples
 
-DataTable (biofiltro_1hz,True,-1)
+DataTable(biofiltro_1hz,True,-1)
   CardOut(0,DAYS_DATA*86400)
   DataInterval(0,1,Sec,10)
   Sample(1,lgr_CO,IEEE4)
@@ -183,6 +183,7 @@ DataTable (biofiltro_1hz,True,-1)
   Sample(1,lgr_gas_P,IEEE4)
   Sample(1,lgr_gas_T,IEEE4)
   Sample(1,lgr_amb_T,IEEE4)
+  
   Sample(1,ugga_CH4,IEEE4)
   Sample(1,ugga_H2O,IEEE4)
   Sample(1,ugga_CO2,IEEE4)
@@ -193,9 +194,9 @@ DataTable (biofiltro_1hz,True,-1)
   Sample(1,ugga_self_T,IEEE4)
 EndTable
 
-DataTable (biofiltro_1min,True,-1)
+DataTable(biofiltro_1min,True,-1)
   CardOut(0,DAYS_DATA*1440)
-  DataInterval (0,60,Sec,10)
+  DataInterval(0,60,Sec,10)
   Average(1,lgr_gas_T,FP2,lgr_gas_T=NAN)
   Average(1,lgr_amb_T,FP2,lgr_amb_T=NAN)
   Average(1,ugga_gas_T,FP2,ugga_gas_T=NAN)
@@ -211,11 +212,12 @@ DataTable (biofiltro_1min,True,-1)
   Average(1,RH,FP2,RH=NAN)
   Average(1,Press,IEEE4,Press=NAN) 'overranges FP2 precision
   Totalize(1,Rain_amt,FP2,Rain_amt=NAN)
-  Sample(1,PAR_density,FP2) 'rounding PAR ok
+
+  Average(1,PAR_density,FP2,PAR_density=NAN) 'rounding PAR ok
   Sample(1,PAR_MULT,IEEE4)
     FieldNames("PAR_MULT")
     Units PAR_MULT = umol/(mV s m^2)
-  Sample(1,LoggerTmpr,FP2)
+  Average(1,LoggerTmpr,FP2,LoggerTmpr=NAN)
   Average(1,AC_Tmpr,FP2,AC_Tmpr=NAN)
 EndTable
 
