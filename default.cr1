@@ -33,8 +33,8 @@ Public WXT_AZIMUTH As Float = 0  'orientation w.r.t. True North, degrees
 
 Const PAR_DF = 1
 
-Const NTP_SERVER = "0.us.pool.ntp.org"
-Const NTP_MAX_DRIFT = 500 'msec, max drift before adjusting clock
+Const GPS_COM = Com3
+Const MAX_DRIFT = 500 'ms
 
 Const SCAN_INT = 60    'seconds, also for data record interval
 Const DAYS_DATA = 365*5   'how long to store data ON THE CARD? (Ring fill)
@@ -73,8 +73,38 @@ Public PowerIn
 Units LoggerTmpr = degC
 Units PowerIn = Vdc
 
-Public ClockError
-Units ClockError = msec
+Dim nmea_sentence(2) As String * 110
+Public gps_data(15)
+Alias gps_data(1) = latitude_a         'Degrees latitude (+ = North; - = South)
+Alias gps_data(2) = latitude_b         'Minutes latitude
+Alias gps_data(3) = longitude_a        'Degress longitude (+ = East; - = West)
+Alias gps_data(4) = longitude_b        'Minutes longitude
+Alias gps_data(5) = speed              'Speed
+Alias gps_data(6) = course             'Course over ground
+Alias gps_data(7) = magnetic_variation 'Magnetic variation from true north (+ = East; - = West)
+Alias gps_data(8) = fix_quality        'GPS fix quality: 0 = invalid, 1 = GPS, 2 = differential GPS, 6 = estimated
+Alias gps_data(9) = nmbr_satellites    'Number of satellites used for fix
+Alias gps_data(10) = altitude          'Antenna altitude
+Alias gps_data(11) = pps               'usec into sec of system clock when PPS rising edge occurs, typically 990,000 once synced
+Alias gps_data(12) = dt_since_gprmc    'Time since last GPRMC string, normally less than 1 second
+Alias gps_data(13) = gps_ready         'Counts from 0 to 10, 10 = ready
+Alias gps_data(14) = max_clock_change  'Maximum value the clock was changed in msec
+Alias gps_data(15) = nmbr_clock_change 'Number of times the clock was changed
+Units latitude_a = degrees
+Units latitude_b = minutes
+Units longitude_a = degrees
+Units longitude_b = minutes
+Units speed = m/s
+Units course = degrees
+Units magnetic_variation = unitless
+Units fix_quality = unitless
+Units nmbr_satellites = unitless
+Units altitude = m
+Units pps = ms
+Units dt_since_gprmc = s
+Units gps_ready = unitless
+Units max_clock_change = ms
+Units nmbr_clock_change = samples
 
 
 DataTable (biofiltro_1min,True,-1)
@@ -148,7 +178,7 @@ BeginProg
   
   SlowSequence 'HINT keep possible timeouts from impacting daq
   Scan(5,Min,1,0)
-    ClockError = NetworkTimeProtocol(NTP_SERVER,UTC_OFFSET*3600,NTP_MAX_DRIFT)
+    GPS(gps_data(1),GPS_COM,UTC_OFFSET*3600,MAX_DRIFT,nmea_sentence(1))
   NextScan
 EndProg
 
