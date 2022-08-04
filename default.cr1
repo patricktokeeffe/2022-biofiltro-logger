@@ -37,7 +37,7 @@ Const N2O_BAUD = 115200
 Const N2O_FMT = 3 '8/n/1
 Const N2O_BUFF = 800
 
-Const WXT_COM = 7      'datalogger COM port
+Const WXT_COM = 7      'C7
 Const WXT_SDI = 0      'SDI address
 Public WXT_AZIMUTH As Float = 0  'orientation w.r.t. True North, degrees
 
@@ -105,7 +105,7 @@ Units lgr_gas_P = torr
 Units lgr_gas_T = degC
 Units lgr_amb_T = degC
 
-Const WXT_NVARS = 11
+Const WXT_NVARS = 9
 Public WXT(WXT_NVARS)
 Alias WXT(1)  = WindDir
 Alias WXT(2)  = WindSpeed
@@ -113,20 +113,16 @@ Alias WXT(3)  = Tmpr
 Alias WXT(4)  = RH
 Alias WXT(5)  = Press
 Alias WXT(6) = Rain_amt
-Alias WXT(7) = Rain_dur
-Alias WXT(8) = Rain_int
-Alias WXT(9) = Rain_peak
-Alias WXT(10) = HeaterTmpr
-Alias WXT(11) = HeaterVolts
+Alias WXT(7) = Hail_amt
+Alias WXT(8) = HeaterTmpr
+Alias WXT(9) = HeaterVolts
 Units WindDir = degrees
 Units WindSpeed = m/s
 Units Tmpr = degC
 Units RH = percent
 Units Press = hPa
 Units Rain_amt = mm
-Units Rain_dur = sec
-Units Rain_int = mm/hr
-Units Rain_peak = mm/hr
+Units Hail_amt = hits/cm^2
 Units HeaterTmpr = degC
 Units HeaterVolts = Vdc
 
@@ -246,10 +242,8 @@ DisplayMenu("Trailer WA-25012E",-1)
     DisplayValue("T, *C", Tmpr)
     DisplayValue("RH, %", RH)
     DisplayValue("P, hPa", Press)
-    DisplayValue("R_amt, mm", Rain_amt)
-    DisplayValue("R_dur, sec", Rain_dur)
-    DisplayValue("R_int, mm/hr", Rain_int)
-    DisplayValue("R_peak, mm/hr", Rain_peak)
+    DisplayValue("Rain, mm", Rain_amt)
+    DisplayValue("Hail, hits/cm^2", Hail_amt)
   EndSubMenu
   DisplayValue("PAR (approx)", PAR_density)
   DisplayValue("Logger T, *C", LoggerTmpr)
@@ -304,8 +298,8 @@ BeginProg
       SW12(False) 'disable on battery
     EndIf
     
-    Move(WXT(1),WXT_NVARS,NAN,1)
-    SDI12Recorder(WXT(1),WXT_COM,WXT_SDI,"R!",1,0)
+    'Move(WXT(1),WXT_NVARS,NAN,1) 'XXXX is this why sometimes wind shows up as NAN for several minutes?
+    SDI12Recorder(WXT(1),WXT_COM,WXT_SDI,"R!",1,0,-1)
     If (WindDir <> NAN) Then
       WindDir = (WindDir + WXT_AZIMUTH) MOD 360
     EndIf
