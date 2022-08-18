@@ -24,7 +24,7 @@
 
 ConstTable(Constants) 'HINT named so can modify via LoggerNet
   Const UTC_OFFSET = -8  'hrs, logger offset relative to UTC time
-  Const PAR_MULT As Float = 0 'unique sensor calibration, umol/(mV s m^2) - NEGATIVE for LI-190SA wiring convention
+  Const PAR_MULT As Float = -197.63 'unique sensor calibration, umol/(mV s m^2) - NEGATIVE for LI-190SA wiring convention
 EndConstTable
 
 Const CH4_COM = Com2
@@ -40,7 +40,8 @@ Const N2O_BUFF = 800
 Const WXT_COM = 7      'C7
 Const WXT_SDI = 0      'SDI address
 Public WXT_AZIMUTH As Float = 0  'orientation w.r.t. True North, degrees
-
+Units WXT_AZIMUTH = degrees
+    
 Const PAR_DF = 1
 
 Const AC_TYPEK_DF = 4
@@ -103,12 +104,12 @@ Units lgr_N2O = ppb
 Units lgr_H2O = ppm
 Units lgr_CO_dry = ppb (dry)
 Units lgr_N2O_dry = ppb (dry)
-Units lgr_gas_P = torr
+Units lgr_gas_P = Torr
 Units lgr_gas_T = degC
 Units lgr_amb_T = degC
 
 Const WXT_NVARS = 9
-Public WXT(WXT_NVARS)
+Dim WXT(WXT_NVARS)
 Alias WXT(1)  = WindDir
 Alias WXT(2)  = WindSpeed
 Alias WXT(3)  = Tmpr
@@ -128,19 +129,19 @@ Units Hail_amt = hits/cm^2
 Units HeaterTmpr = degC
 Units HeaterVolts = Vdc
 
-Public PAR_density
+Dim PAR_density
 Units PAR_density = umol/(s m^2)
 
-Public LoggerTmpr
-Public PowerIn
+Dim LoggerTmpr
+Dim PowerIn
 Units LoggerTmpr = degC
 Units PowerIn = Vdc
 
-Public AC_Tmpr
+Dim AC_Tmpr
 Units AC_Tmpr = degC
 
 Dim nmea_sentence(2) As String * 110
-Public gps_data(15)
+Dim gps_data(15)
 Alias gps_data(1) = latitude_a         'Degrees latitude (+ = North; - = South)
 Alias gps_data(2) = latitude_b         'Minutes latitude
 Alias gps_data(3) = longitude_a        'Degress longitude (+ = East; - = West)
@@ -172,6 +173,7 @@ Units gps_ready = unitless
 Units max_clock_change = ms
 Units nmbr_clock_change = samples
 
+
 DataTable(biofiltro_1hz,True,-1)
   CardOut(0,DAYS_DATA*86400)
   DataInterval(0,1,Sec,10)
@@ -197,10 +199,6 @@ EndTable
 DataTable(biofiltro_1min,True,-1)
   CardOut(0,DAYS_DATA*1440)
   DataInterval(0,60,Sec,10)
-  Average(1,lgr_gas_T,FP2,lgr_gas_T=NAN)
-  Average(1,lgr_amb_T,FP2,lgr_amb_T=NAN)
-  Average(1,ugga_gas_T,FP2,ugga_gas_T=NAN)
-  Average(1,ugga_self_T,FP2,ugga_self_T=NAN)
   
   Median(1,WindDir,12,FP2,WindDir=NAN) 'average WD might be meaningless
   Average(1,WindDir,FP2,WindDir=NAN)
@@ -219,6 +217,10 @@ DataTable(biofiltro_1min,True,-1)
     Units PAR_MULT = umol/(mV s m^2)
   Average(1,LoggerTmpr,FP2,LoggerTmpr=NAN)
   Average(1,AC_Tmpr,FP2,AC_Tmpr=NAN)
+  Average(1,lgr_gas_T,FP2,disable_n2o)
+  Average(1,lgr_amb_T,FP2,disable_n2o)
+  Average(1,ugga_gas_T,FP2,disable_ugga)
+  Average(1,ugga_self_T,FP2,disable_ugga)
 EndTable
 
 DataTable(biofiltro_gps,True,-1) 'HINT for monitoring Dim'd vars
@@ -228,8 +230,15 @@ DataTable(biofiltro_gps,True,-1) 'HINT for monitoring Dim'd vars
 EndTable
 
 DisplayMenu("Trailer WA-25012E",-1)
-  DisplayValue("AC T, *C", AC_Tmpr)
-  DisplayValue("Logger T, *C", LoggerTmpr)
+  SubMenu("Temperature (*C)")
+    DisplayValue("Ambient", Tmpr)
+    DisplayValue("AC", AC_Tmpr)
+    DisplayValue("Logger", LoggerTmpr)
+    DisplayValue("N2O/CO cell", lgr_gas_T)
+    DisplayValue("N2O/CO amb", lgr_amb_T)
+    DisplayValue("CH4/CO2 cell", ugga_gas_T)
+    DisplayValue("CH4/CO2 amb", ugga_self_T)
+  EndSubMenu
   SubMenu("N2O/CO")
     DisplayValue("N2O, ppb", lgr_N2O)
     DisplayValue("N2O (dry)", lgr_N2O_dry)
@@ -259,6 +268,8 @@ DisplayMenu("Trailer WA-25012E",-1)
     DisplayValue("P, hPa", Press)
     DisplayValue("Rain, mm", Rain_amt)
     DisplayValue("Hail, hits/cm^2", Hail_amt)
+    DisplayValue("Heater, *C", HeaterTmpr)
+    DisplayValue("Heater, Vdc", HeaterVolts)
   EndSubMenu
   SubMenu("GPS")
     DisplayValue("Lat deg", latitude_a)
@@ -290,22 +301,13 @@ BeginProg
         lgr_CO_dry *= 1000
         lgr_N2O_dry *= 1000
       EndIf
-    'ElseIf (n2oco(25) = NAN) Then
-    '  disable_ugga = True
-    'Else
-    '  Move(n2oco(1),25,NAN,1)
     EndIf
 
     SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
     If (Len(ch4_record)) Then
       SplitStr(ugga(1),ch4_record,", ",25,6)
       ch4_year = ugga(1) 'convert string->float
-      disable_ugga = NOT(ch4_year = THIS_YEAR)
-    'ElseIf (ch4_year = NAN) Then
-    '  disable_ugga = True
-    'Else
-    '  Move(ugga(1),25,NAN,1)
-    '  ch4_year = NAN
+      disable_ugga = NOT(ch4_year = this_year)
     EndIf
     
     CallTable(biofiltro_1hz)
@@ -322,7 +324,6 @@ BeginProg
     EndIf
     TCDiff(AC_Tmpr,1,mV2_5,AC_TYPEK_DF,TypeK,LoggerTmpr,True,0,_60Hz,1,0)
     
-    'Move(WXT(1),WXT_NVARS,NAN,1) 'XXXX is this why sometimes wind shows up as NAN for several minutes?
     SDI12Recorder(WXT(1),WXT_COM,WXT_SDI,"R!",1,0,-1)
     If (WindDir <> NAN) Then
       WindDir = (WindDir + WXT_AZIMUTH) MOD 360
@@ -333,7 +334,7 @@ BeginProg
       PAR_density = 0
     EndIf
     
-    CallTable (biofiltro_1min)
+    CallTable(biofiltro_1min)
   NextScan
   
   SlowSequence
