@@ -111,16 +111,18 @@ Units lgr_gas_T = degC
 Units lgr_amb_T = degC
 
 Const WXT_NVARS = 9
-Dim WXT(WXT_NVARS)
-Alias WXT(1)  = WindDir
-Alias WXT(2)  = WindSpeed
-Alias WXT(3)  = Tmpr
-Alias WXT(4)  = RH
-Alias WXT(5)  = Press
-Alias WXT(6) = Rain_amt
-Alias WXT(7) = Hail_amt
-Alias WXT(8) = HeaterTmpr
-Alias WXT(9) = HeaterVolts
+Dim WXT(WXT_NVARS) 
+'HINT order of variables in data messages dictates array alias order, see
+'Vaisala WXT510 User's Guide, Chap 7 for details on data messages
+Alias WXT(1)  = WindDir    'aR1, Dm (Wind)
+Alias WXT(2)  = WindSpeed  ' " , Sm
+Alias WXT(3)  = Tmpr       'aR2, Ta (PTU)
+Alias WXT(4)  = RH         ' " , Ua
+Alias WXT(5)  = Press      ' " , Pa
+Alias WXT(6) = Rain_amt    'aR3, Rc (Precip)
+Alias WXT(7) = Hail_amt    ' " , Hc
+Alias WXT(8) = HeaterTmpr  'aR5, Th (Supervisor)
+Alias WXT(9) = HeaterVolts ' " , Vh
 Units WindDir = degrees
 Units WindSpeed = m/s
 Units Tmpr = degC
@@ -406,7 +408,7 @@ BeginProg
     EndIf
     TCDiff(AC_Tmpr,1,mV2_5,AC_TYPEK_DF,TypeK,LoggerTmpr,True,0,_60Hz,1,0)
     
-    SDI12Recorder(WXT(1),WXT_COM,WXT_SDI,"R!",1,0,-1)
+    SDI12Recorder(WXT(1),WXT_COM,WXT_SDI,"RC!",1,0,-1)
     If (WindDir <> NAN) Then
       WindDir = (WindDir + WXT_AZIMUTH) MOD 360
     EndIf
