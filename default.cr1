@@ -289,6 +289,18 @@ DataTable(biofiltro_runs,(run_flag <> run_state),-1)
   Average(1,AC_Tmpr,FP2,AC_Tmpr=NAN)
 EndTable
 
+'XXXX save every data point to evaluate why sometimes 1-min averages are stupidly wrong
+DataTable(wxt_problem,True,-1)
+  CardOut(0,DAYS_DATA*1440*12)
+  Sample(1,WindSpeed,FP2)
+  Sample(1,WindDir,FP2)
+  Sample(1,Tmpr,FP2)
+  Sample(1,RH,FP2)
+  Sample(1,Press,FP2)
+  Sample(1,Rain_amt,FP2)
+  Sample(1,Hail_amt,FP2)
+EndTable
+
 
 DisplayMenu("Trailer WA-25012E",-1)
   MenuItem("Run flag", run_flag)
@@ -405,6 +417,7 @@ BeginProg
     EndIf
     
     CallTable(biofiltro_1min)
+    CallTable(wxt_problem)
   NextScan
   
   SlowSequence
