@@ -49,8 +49,7 @@ Const AC_TYPEK_DF = 4
 Const GPS_COM = Com1
 Const MAX_DRIFT = 500 'ms
 
-Const DAYS_DATA = 365*5   'how long to store data ON THE CARD? (Ring fill)
-'HINT: internal memory keeps >45 days, 2GB card can support decades
+Const DAYS_DATA = 7   'how long to store data ON THE CARD? (Ring fill)
 
 Dim disable_ugga As Boolean
 Dim ch4_year
@@ -183,8 +182,8 @@ DataTable(biofiltro_1hz,True,-1)
   Sample(1,lgr_CO_dry,IEEE4)
   Sample(1,lgr_N2O_dry,IEEE4)
   Sample(1,lgr_gas_P,IEEE4)
-  Sample(1,lgr_gas_T,IEEE4)
-  Sample(1,lgr_amb_T,IEEE4)
+  Sample(1,lgr_gas_T,FP2)
+  Sample(1,lgr_amb_T,FP2)
   
   Sample(1,ugga_CH4,IEEE4)
   Sample(1,ugga_H2O,IEEE4)
@@ -192,29 +191,33 @@ DataTable(biofiltro_1hz,True,-1)
   Sample(1,ugga_CH4_dry,IEEE4)
   Sample(1,ugga_CO2_dry,IEEE4)
   Sample(1,ugga_gas_P,IEEE4)
-  Sample(1,ugga_gas_T,IEEE4)
-  Sample(1,ugga_self_T,IEEE4)
+  Sample(1,ugga_gas_T,FP2)
+  Sample(1,ugga_self_T,FP2)
 EndTable
 
 DataTable(biofiltro_1min,True,-1)
   CardOut(0,DAYS_DATA*1440)
   DataInterval(0,60,Sec,10)
   
-  Median(1,WindDir,12,FP2,WindDir=NAN) 'average WD might be meaningless
-  Average(1,WindDir,FP2,WindDir=NAN)
-  Average(1,WindSpeed,FP2,WindSpeed=NAN)
-  Sample(1,WXT_AZIMUTH,FP2)
-    FieldNames("WXT_AZIMUTH")
-    Units WXT_AZIMUTH = degrees
+  WindVector(1,WindSpeed,WindDir,FP2,(WindDir=NAN OR WindSpeed=NAN),0,0,0)
+    FieldNames("WindSpeed_Avg,WindDir_vector_Avg,WindDir_Std")
+    Units WindSpeed_Avg = m/s
+    Units WindDir_vector_Avg = degrees
+    Units WindDir_Std = degrees
+  Average(1,WXT_AZIMUTH,FP2,WXT_AZIMUTH=NAN)
   Average(1,Tmpr,FP2,Tmpr=NAN)
   Average(1,RH,FP2,RH=NAN)
   Average(1,Press,IEEE4,Press=NAN) 'overranges FP2 precision
   Totalize(1,Rain_amt,FP2,Rain_amt=NAN)
+  Totalize(1,Hail_amt,FP2,Hail_amt=NAN)
+  Average(1,HeaterTmpr,FP2,HeaterTmpr=NAN)
+  Average(1,HeaterVolts,FP2,HeaterVolts=NAN)
 
-  Average(1,PAR_density,FP2,PAR_density=NAN) 'rounding PAR ok
-  Sample(1,PAR_MULT,IEEE4)
-    FieldNames("PAR_MULT")
-    Units PAR_MULT = umol/(mV s m^2)
+  Average(1,PAR_density,FP2,PAR_density=NAN)
+  Average(1,PAR_MULT,IEEE4,PAR_MULT=NAN)
+    FieldNames("PAR_MULT_Avg")
+    Units PAR_MULT_Avg = umol/(mV s m^2)
+
   Average(1,LoggerTmpr,FP2,LoggerTmpr=NAN)
   Average(1,AC_Tmpr,FP2,AC_Tmpr=NAN)
   Average(1,lgr_gas_T,FP2,disable_n2o)
