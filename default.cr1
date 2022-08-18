@@ -51,6 +51,9 @@ Const MAX_DRIFT = 500 'ms
 
 Const DAYS_DATA = 7   'how long to store data ON THE CARD? (Ring fill)
 
+Public run_flag As Boolean 'For toggling GHG averaging off/on
+Dim run_state As Boolean 'For triggering data reduction at end of run
+
 Dim disable_ugga As Boolean
 Dim ch4_year
 Dim rTime(9)
@@ -232,7 +235,63 @@ DataTable(biofiltro_gps,True,-1) 'HINT for monitoring Dim'd vars
   Sample(15,gps_data(1),IEEE4)
 EndTable
 
+'XXXX HINT omit Units definitions - duplicates will crash compiler
+DataTable(biofiltro_runs,(run_flag <> run_state),-1)
+  CardOut(0,30)
+  OpenInterval
+  
+  Totalize(1,ABS(run_flag),IEEE4,run_flag=NAN)
+    FieldNames("run_duration")
+    Units run_duration = seconds
+
+  Average(1,lgr_CO_dry,IEEE4,disable_n2o)
+  StdDev(1,lgr_CO_dry,IEEE4,disable_n2o)
+  Average(1,lgr_N2O_dry,IEEE4,disable_n2o)
+  StdDev(1,lgr_N2O_dry,IEEE4,disable_n2o)
+  Average(1,lgr_H2O,IEEE4,disable_n2o)
+  StdDev(1,lgr_H2O,IEEE4,disable_n2o)
+  Average(1,lgr_gas_P,IEEE4,disable_n2o)
+  StdDev(1,lgr_gas_P,FP2,disable_n2o)
+  Average(1,lgr_gas_T,FP2,disable_n2o)
+  StdDev(1,lgr_gas_T,FP2,disable_n2o)
+  Average(1,lgr_amb_T,FP2,disable_n2o)
+  StdDev(1,lgr_amb_T,FP2,disable_n2o)
+  
+  Average(1,ugga_CH4_dry,IEEE4,disable_ugga)
+  StdDev(1,ugga_CH4_dry,IEEE4,disable_ugga)
+  Average(1,ugga_CO2_dry,IEEE4,disable_ugga)
+  StdDev(1,ugga_CO2_dry,IEEE4,disable_ugga)
+  Average(1,ugga_H2O,IEEE4,disable_ugga)
+  StdDev(1,ugga_H2O,IEEE4,disable_ugga)
+  Average(1,ugga_gas_P,IEEE4,disable_ugga)
+  StdDev(1,ugga_gas_P,IEEE4,disable_ugga)
+  Average(1,ugga_gas_T,FP2,disable_ugga)
+  StdDev(1,ugga_gas_T,FP2,disable_ugga)
+  Average(1,ugga_self_T,FP2,disable_ugga)
+  StdDev(1,ugga_self_T,FP2,disable_ugga)
+  
+  WindVector(1,WindSpeed,WindDir,FP2,(WindDir=NAN OR WindSpeed=NAN),0,0,0)
+    FieldNames("WindSpeed_Avg,WindDir_vector_Avg,WindDir_Std")
+  Average(1,WXT_AZIMUTH,IEEE4,WXT_AZIMUTH=NAN)
+  Average(1,Tmpr,IEEE4,Tmpr=NAN)
+  Average(1,RH,IEEE4,RH=NAN)
+  Average(1,Press,IEEE4,Press=NAN)
+  Totalize(1,Rain_amt,FP2,Rain_amt=NAN)
+  Totalize(1,Hail_amt,FP2,Hail_amt=NAN)
+  Average(1,HeaterTmpr,FP2,HeaterTmpr=NAN)
+  Average(1,HeaterVolts,FP2,HeaterVolts=NAN)
+
+  Average(1,PAR_density,FP2,PAR_density=NAN) 'rounding PAR ok
+  Average(1,PAR_MULT,IEEE4,PAR_MULT=NAN)
+    FieldNames("PAR_MULT_Avg")
+
+  Average(1,LoggerTmpr,FP2,LoggerTmpr=NAN)
+  Average(1,AC_Tmpr,FP2,AC_Tmpr=NAN)
+EndTable
+
+
 DisplayMenu("Trailer WA-25012E",-1)
+  MenuItem("Run flag", run_flag)
   SubMenu("Temperature (*C)")
     DisplayValue("Ambient", Tmpr)
     DisplayValue("AC", AC_Tmpr)
@@ -314,6 +373,14 @@ BeginProg
     EndIf
     
     CallTable(biofiltro_1hz)
+    If (run_flag) 'during a sampling run...
+      run_state = run_flag 'ensure data table trigger is false...
+      CallTable(biofiltro_runs) 'and do intermediate processing
+    ElseIf (run_state AND NOT run_flag) 'but when run is halted...
+      'then data table trigger becomes true (i.e. run_state != run_flag)
+      CallTable(biofiltro_runs) 'so call for final data storage
+      run_state = run_flag 'and then reset flags for next run
+    EndIf
   NextScan
   
   SlowSequence
