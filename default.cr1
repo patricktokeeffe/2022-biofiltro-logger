@@ -49,7 +49,7 @@ Const AC_TYPEK_DF = 4
 Const GPS_COM = Com1
 Const MAX_DRIFT = 500 'ms
 
-Const DAYS_DATA = 7   'how long to store data ON THE CARD? (Ring fill)
+Const DAYS_DATA = 14   'how long to store data ON THE CARD? (Ring fill)
 
 Public run_flag As Boolean 'For toggling GHG averaging off/on
 Dim run_state As Boolean 'For triggering data reduction at end of run
@@ -187,48 +187,48 @@ DataTable(biofiltro_1hz,True,-1)
   Sample(1,lgr_CO_dry,IEEE4)
   Sample(1,lgr_N2O_dry,IEEE4)
   Sample(1,lgr_gas_P,IEEE4)
-  Sample(1,lgr_gas_T,FP2)
-  Sample(1,lgr_amb_T,FP2)
+  Sample(1,lgr_gas_T,IEEE4)
+  Sample(1,lgr_amb_T,IEEE4)
   
   Sample(1,ugga_CH4,IEEE4)
-  Sample(1,ugga_H2O,IEEE4)
   Sample(1,ugga_CO2,IEEE4)
+  Sample(1,ugga_H2O,IEEE4)
   Sample(1,ugga_CH4_dry,IEEE4)
   Sample(1,ugga_CO2_dry,IEEE4)
   Sample(1,ugga_gas_P,IEEE4)
-  Sample(1,ugga_gas_T,FP2)
-  Sample(1,ugga_self_T,FP2)
+  Sample(1,ugga_gas_T,IEEE4)
+  Sample(1,ugga_self_T,IEEE4)
 EndTable
 
 DataTable(biofiltro_1min,True,-1)
   CardOut(0,DAYS_DATA*1440)
   DataInterval(0,60,Sec,10)
   
-  WindVector(1,WindSpeed,WindDir,FP2,(WindDir=NAN OR WindSpeed=NAN),0,0,0)
+  WindVector(1,WindSpeed,WindDir,IEEE4,(WindDir=NAN OR WindSpeed=NAN),0,0,0)
     FieldNames("WindSpeed_Avg,WindDir_vector_Avg,WindDir_Std")
     Units WindSpeed_Avg = m/s
     Units WindDir_vector_Avg = degrees
     Units WindDir_Std = degrees
-  Average(1,WXT_AZIMUTH,FP2,WXT_AZIMUTH=NAN)
-  Average(1,Tmpr,FP2,Tmpr=NAN)
-  Average(1,RH,FP2,RH=NAN)
-  Average(1,Press,IEEE4,Press=NAN) 'overranges FP2 precision
-  Totalize(1,Rain_amt,FP2,Rain_amt=NAN)
-  Totalize(1,Hail_amt,FP2,Hail_amt=NAN)
-  Average(1,HeaterTmpr,FP2,HeaterTmpr=NAN)
-  Average(1,HeaterVolts,FP2,HeaterVolts=NAN)
+  Average(1,WXT_AZIMUTH,IEEE4,WXT_AZIMUTH=NAN)
+  Average(1,Tmpr,IEEE4,Tmpr=NAN)
+  Average(1,RH,IEEE4,RH=NAN)
+  Average(1,Press,IEEE4,Press=NAN)
+  Totalize(1,Rain_amt,IEEE4,Rain_amt=NAN)
+  Totalize(1,Hail_amt,IEEE4,Hail_amt=NAN)
+  Average(1,HeaterTmpr,IEEE4,HeaterTmpr=NAN)
+  Average(1,HeaterVolts,IEEE4,HeaterVolts=NAN)
 
-  Average(1,PAR_density,FP2,PAR_density=NAN)
+  Average(1,PAR_density,IEEE4,PAR_density=NAN)
   Average(1,PAR_MULT,IEEE4,PAR_MULT=NAN)
     FieldNames("PAR_MULT_Avg")
     Units PAR_MULT_Avg = umol/(mV s m^2)
 
-  Average(1,LoggerTmpr,FP2,LoggerTmpr=NAN)
-  Average(1,AC_Tmpr,FP2,AC_Tmpr=NAN)
-  Average(1,lgr_gas_T,FP2,disable_n2o)
-  Average(1,lgr_amb_T,FP2,disable_n2o)
-  Average(1,ugga_gas_T,FP2,disable_ugga)
-  Average(1,ugga_self_T,FP2,disable_ugga)
+  Average(1,LoggerTmpr,IEEE4,LoggerTmpr=NAN)
+  Average(1,AC_Tmpr,IEEE4,AC_Tmpr=NAN)
+  Average(1,lgr_gas_T,IEEE4,disable_n2o)
+  Average(1,lgr_amb_T,IEEE4,disable_n2o)
+  Average(1,ugga_gas_T,IEEE4,disable_ugga)
+  Average(1,ugga_self_T,IEEE4,disable_ugga)
 EndTable
 
 DataTable(biofiltro_gps,True,-1) 'HINT for monitoring Dim'd vars
@@ -253,11 +253,11 @@ DataTable(biofiltro_runs,(run_flag <> run_state),-1)
   Average(1,lgr_H2O,IEEE4,disable_n2o)
   StdDev(1,lgr_H2O,IEEE4,disable_n2o)
   Average(1,lgr_gas_P,IEEE4,disable_n2o)
-  StdDev(1,lgr_gas_P,FP2,disable_n2o)
-  Average(1,lgr_gas_T,FP2,disable_n2o)
-  StdDev(1,lgr_gas_T,FP2,disable_n2o)
-  Average(1,lgr_amb_T,FP2,disable_n2o)
-  StdDev(1,lgr_amb_T,FP2,disable_n2o)
+  StdDev(1,lgr_gas_P,IEEE4,disable_n2o)
+  Average(1,lgr_gas_T,IEEE4,disable_n2o)
+  StdDev(1,lgr_gas_T,IEEE4,disable_n2o)
+  Average(1,lgr_amb_T,IEEE4,disable_n2o)
+  StdDev(1,lgr_amb_T,IEEE4,disable_n2o)
   
   Average(1,ugga_CH4_dry,IEEE4,disable_ugga)
   StdDev(1,ugga_CH4_dry,IEEE4,disable_ugga)
@@ -267,28 +267,28 @@ DataTable(biofiltro_runs,(run_flag <> run_state),-1)
   StdDev(1,ugga_H2O,IEEE4,disable_ugga)
   Average(1,ugga_gas_P,IEEE4,disable_ugga)
   StdDev(1,ugga_gas_P,IEEE4,disable_ugga)
-  Average(1,ugga_gas_T,FP2,disable_ugga)
-  StdDev(1,ugga_gas_T,FP2,disable_ugga)
-  Average(1,ugga_self_T,FP2,disable_ugga)
-  StdDev(1,ugga_self_T,FP2,disable_ugga)
+  Average(1,ugga_gas_T,IEEE4,disable_ugga)
+  StdDev(1,ugga_gas_T,IEEE4,disable_ugga)
+  Average(1,ugga_self_T,IEEE4,disable_ugga)
+  StdDev(1,ugga_self_T,IEEE4,disable_ugga)
   
-  WindVector(1,WindSpeed,WindDir,FP2,(WindDir=NAN OR WindSpeed=NAN),0,0,0)
+  WindVector(1,WindSpeed,WindDir,IEEE4,(WindDir=NAN OR WindSpeed=NAN),0,0,0)
     FieldNames("WindSpeed_Avg,WindDir_vector_Avg,WindDir_Std")
   Average(1,WXT_AZIMUTH,IEEE4,WXT_AZIMUTH=NAN)
   Average(1,Tmpr,IEEE4,Tmpr=NAN)
   Average(1,RH,IEEE4,RH=NAN)
   Average(1,Press,IEEE4,Press=NAN)
-  Totalize(1,Rain_amt,FP2,Rain_amt=NAN)
-  Totalize(1,Hail_amt,FP2,Hail_amt=NAN)
-  Average(1,HeaterTmpr,FP2,HeaterTmpr=NAN)
-  Average(1,HeaterVolts,FP2,HeaterVolts=NAN)
+  Totalize(1,Rain_amt,IEEE4,Rain_amt=NAN)
+  Totalize(1,Hail_amt,IEEE4,Hail_amt=NAN)
+  Average(1,HeaterTmpr,IEEE4,HeaterTmpr=NAN)
+  Average(1,HeaterVolts,IEEE4,HeaterVolts=NAN)
 
-  Average(1,PAR_density,FP2,PAR_density=NAN) 'rounding PAR ok
+  Average(1,PAR_density,IEEE4,PAR_density=NAN)
   Average(1,PAR_MULT,IEEE4,PAR_MULT=NAN)
     FieldNames("PAR_MULT_Avg")
 
-  Average(1,LoggerTmpr,FP2,LoggerTmpr=NAN)
-  Average(1,AC_Tmpr,FP2,AC_Tmpr=NAN)
+  Average(1,LoggerTmpr,IEEE4,LoggerTmpr=NAN)
+  Average(1,AC_Tmpr,IEEE4,AC_Tmpr=NAN)
 EndTable
 
 'XXXX save every data point to evaluate why sometimes 1-min averages are stupidly wrong
@@ -301,6 +301,8 @@ DataTable(wxt_problem,True,-1)
   Sample(1,Press,FP2)
   Sample(1,Rain_amt,FP2)
   Sample(1,Hail_amt,FP2)
+  Sample(1,HeaterTmpr,FP2)
+  Sample(1,HeaterVolts,FP2)
 EndTable
 
 
