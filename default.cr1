@@ -272,8 +272,11 @@ DataTable(biofiltro_runs,(run_flag <> run_state),-1)
   Average(1,Tmpr,IEEE4,Tmpr=NAN)
   Average(1,RH,IEEE4,RH=NAN)
   Average(1,Press,IEEE4,Press=NAN)
-  Totalize(1,Rain_amt,IEEE4,Rain_amt=NAN)
-  Totalize(1,Hail_amt,IEEE4,Hail_amt=NAN)
+  'XXXX HINT halved to compensate for calling table twice/update
+  Totalize(1,Rain_amt/2,IEEE4,Rain_amt=NAN)
+    FieldNames("Rain_amt_Tot")
+  Totalize(1,Hail_amt/2,IEEE4,Hail_amt=NAN)
+    FieldNames("Hail_amt_Tot")
   Average(1,HeaterTmpr,IEEE4,HeaterTmpr=NAN)
   Average(1,HeaterVolts,IEEE4,HeaterVolts=NAN)
 
