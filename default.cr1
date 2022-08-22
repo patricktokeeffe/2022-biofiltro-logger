@@ -133,12 +133,12 @@ Units HeaterVolts = Vdc
 Dim PAR_density
 Units PAR_density = umol/(s m^2)
 
-Dim LoggerTmpr
+Public LoggerTmpr
 Dim PowerIn
 Units LoggerTmpr = degC
 Units PowerIn = Vdc
 
-Dim AC_Tmpr
+Public AC_Tmpr
 Units AC_Tmpr = degC
 
 Dim nmea_sentence(2) As String * 110
