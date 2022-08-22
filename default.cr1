@@ -55,9 +55,6 @@ Public run_flag As Boolean 'For toggling GHG averaging off/on
 Dim run_state As Boolean 'For triggering data reduction at end of run
 
 Dim disable_ugga As Boolean
-Dim ch4_year
-Dim rTime(9)
-Alias rTime(1) = this_year
 Dim ch4_record As String * 400
 Dim ugga(25) 'HINT use biofiltro_1Hz table instead of Public to monitor data
 '1: date (only year captured)   '2: time (only hour captured)
@@ -69,9 +66,9 @@ Alias ugga(11) = ugga_CO2_dry    '12: CO2 dry s.d.
 Alias ugga(13) = ugga_gas_P      '14: gas P s.d.
 Alias ugga(15) = ugga_gas_T      '16: gas T s.d.
 Alias ugga(17) = ugga_self_T     '18: self T s.d.
-Alias ugga(19) = ugga_ringdown0  '20: ringdown #0 s.d.
-Alias ugga(21) = ugga_ringdown1  '22: ringdown #1 s.d.
-Alias ugga(23) = ugga_fit_flag   '24: MIU valve
+'19: ringdown #0                 '20: ringdown #0 s.d.
+'21: ringdown #1                 '22: ringdown #1 s.d.
+'23: Fit flag                    '24: MIU valve
 '25: MIU description
 Units ugga_CH4 = ppm
 Units ugga_H2O = ppm
@@ -81,9 +78,6 @@ Units ugga_CO2_dry = ppm (dry)
 Units ugga_gas_P = Torr
 Units ugga_gas_T = degC
 Units ugga_self_T = degC
-Units ugga_ringdown0 = usec
-Units ugga_ringdown1 = usec
-Units ugga_fit_flag = arb
 
 Dim disable_n2o As Boolean
 Dim n2o_record As String * 400
@@ -326,6 +320,7 @@ DisplayMenu("Trailer WA-25012E",-1)
     DisplayValue("Cell P", lgr_gas_P)
     DisplayValue("Cell T", lgr_gas_T)
     DisplayValue("Amb T", lgr_amb_T)
+    DisplayValue("Fit flag", n2oco(25))
   EndSubMenu
   SubMenu("CH4/CO2")
     DisplayValue("CH4, ppm", ugga_CH4)
@@ -336,6 +331,9 @@ DisplayMenu("Trailer WA-25012E",-1)
     DisplayValue("Cell P", ugga_gas_P)
     DisplayValue("Cell T", ugga_gas_T)
     DisplayValue("Self T", ugga_self_T)
+    DisplayValue("rd0, usec", ugga(19))
+    DisplayValue("rd1, usec", ugga(21))
+    DisplayValue("Fit flag", ugga(23))
   EndSubMenu
   SubMenu("WXT510")
     MenuItem("Azimuth", WXT_AZIMUTH)
@@ -384,8 +382,8 @@ BeginProg
     SerialIn(ch4_record,CH4_COM,5,&h0A,CH4_BUFF)
     If (Len(ch4_record)) Then
       SplitStr(ugga(1),ch4_record,", ",25,6)
-      ch4_year = ugga(1) 'convert string->float
-      disable_ugga = NOT(ch4_year = this_year)
+      disable_ugga = NOT(ugga(23) = 3) 'HACK - assume Fit_Flag always 3
+      ch4_record = ""
     EndIf
     
     CallTable(biofiltro_1hz)
@@ -426,7 +424,6 @@ BeginProg
   
   SlowSequence
   Scan(1,Min,1,0)
-    RealTime(rTime(1)) 'HINT for LGR CH4 message validation
     GPS(gps_data(1),GPS_COM,UTC_OFFSET*3600,MAX_DRIFT,nmea_sentence(1))
     CallTable(biofiltro_gps)
   NextScan
