@@ -289,18 +289,18 @@ DataTable(biofiltro_runs,(run_flag <> run_state),-1)
   Average(1,AC_Tmpr,IEEE4,AC_Tmpr=NAN)
 EndTable
 
-'XXXX save every data point to evaluate why sometimes 1-min averages are stupidly wrong
-DataTable(wxt_problem,True,-1)
+DataTable(biofiltro_wxt,True,-1)
   CardOut(0,DAYS_DATA*1440*12)
-  Sample(1,WindSpeed,FP2)
-  Sample(1,WindDir,FP2)
-  Sample(1,Tmpr,FP2)
-  Sample(1,RH,FP2)
-  Sample(1,Press,FP2)
-  Sample(1,Rain_amt,FP2)
-  Sample(1,Hail_amt,FP2)
-  Sample(1,HeaterTmpr,FP2)
-  Sample(1,HeaterVolts,FP2)
+  Sample(1,WXT_AZIMUTH,IEEE4)
+  Sample(1,WindSpeed,IEEE4)
+  Sample(1,WindDir,IEEE4)
+  Sample(1,Tmpr,IEEE4)
+  Sample(1,RH,IEEE4)
+  Sample(1,Press,IEEE4)
+  Sample(1,Rain_amt,IEEE4)
+  Sample(1,Hail_amt,IEEE4)
+  Sample(1,HeaterTmpr,IEEE4)
+  Sample(1,HeaterVolts,IEEE4)
 EndTable
 
 
@@ -425,7 +425,7 @@ BeginProg
     EndIf
     
     CallTable(biofiltro_1min)
-    CallTable(wxt_problem)
+    CallTable(biofiltro_wxt)
   NextScan
   
   SlowSequence
