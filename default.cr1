@@ -66,8 +66,8 @@ Alias ugga(5)  = ugga_H2O        '6: H2O s.d.
 Alias ugga(7)  = ugga_CO2        '8: CO2 s.d.
 Alias ugga(9)  = ugga_CH4_dry    '10: CH4 dry s.d.
 Alias ugga(11) = ugga_CO2_dry    '12: CO2 dry s.d.
-Alias ugga(13) = ugga_gas_P      '14: gas P s.d.
-Alias ugga(15) = ugga_gas_T      '16: gas T s.d.
+Alias ugga(13) = ugga_cell_P      '14: gas P s.d.
+Alias ugga(15) = ugga_cell_T      '16: gas T s.d.
 Alias ugga(17) = ugga_self_T     '18: self T s.d.
 '19: ringdown #0                 '20: ringdown #0 s.d.
 '21: ringdown #1                 '22: ringdown #1 s.d.
@@ -78,8 +78,8 @@ Units ugga_H2O = ppm
 Units ugga_CO2 = ppm
 Units ugga_CH4_dry = ppm (dry)
 Units ugga_CO2_dry = ppm (dry)
-Units ugga_gas_P = Torr
-Units ugga_gas_T = degC
+Units ugga_cell_P = Torr
+Units ugga_cell_T = degC
 Units ugga_self_T = degC
 
 Dim disable_n2o As Boolean
@@ -91,9 +91,9 @@ Alias n2oco(5)  = lgr_N2O     '6: N2O se
 Alias n2oco(7)  = lgr_H2O     '8: H2O se
 Alias n2oco(9)  = lgr_CO_dry  '10: CO dry se
 Alias n2oco(11) = lgr_N2O_dry '12: N2O dry se
-Alias n2oco(13) = lgr_gas_P   '14: GasP se
-Alias n2oco(15) = lgr_gas_T   '16: GasT se
-Alias n2oco(17) = lgr_amb_T   '18: AmbT se
+Alias n2oco(13) = lgr_cell_P   '14: GasP se
+Alias n2oco(15) = lgr_cell_T   '16: GasT se
+Alias n2oco(17) = lgr_self_T   '18: AmbT se
 '19: LTC0 (volts)             '20: LTCO (volts) se
 '21: AIN5                     '22: AIN5 se
 '23: DetOff                   '24: DetOff se
@@ -103,9 +103,9 @@ Units lgr_N2O = ppb
 Units lgr_H2O = ppm
 Units lgr_CO_dry = ppb (dry)
 Units lgr_N2O_dry = ppb (dry)
-Units lgr_gas_P = Torr
-Units lgr_gas_T = degC
-Units lgr_amb_T = degC
+Units lgr_cell_P = Torr
+Units lgr_cell_T = degC
+Units lgr_self_T = degC
 
 Const WXT_NVARS = 9
 Dim WXT(WXT_NVARS) 
@@ -183,17 +183,17 @@ DataTable(biofiltro_1hz,True,-1)
   Sample(1,lgr_H2O,IEEE4)
   Sample(1,lgr_CO_dry,IEEE4)
   Sample(1,lgr_N2O_dry,IEEE4)
-  Sample(1,lgr_gas_P,IEEE4)
-  Sample(1,lgr_gas_T,IEEE4)
-  Sample(1,lgr_amb_T,IEEE4)
+  Sample(1,lgr_cell_P,IEEE4)
+  Sample(1,lgr_cell_T,IEEE4)
+  Sample(1,lgr_self_T,IEEE4)
   
   Sample(1,ugga_CH4,IEEE4)
   Sample(1,ugga_CO2,IEEE4)
   Sample(1,ugga_H2O,IEEE4)
   Sample(1,ugga_CH4_dry,IEEE4)
   Sample(1,ugga_CO2_dry,IEEE4)
-  Sample(1,ugga_gas_P,IEEE4)
-  Sample(1,ugga_gas_T,IEEE4)
+  Sample(1,ugga_cell_P,IEEE4)
+  Sample(1,ugga_cell_T,IEEE4)
   Sample(1,ugga_self_T,IEEE4)
 EndTable
 
@@ -222,9 +222,9 @@ DataTable(biofiltro_1min,True,-1)
 
   Average(1,LoggerTmpr,IEEE4,LoggerTmpr=NAN)
   Average(1,AC_Tmpr,IEEE4,AC_Tmpr=NAN)
-  Average(1,lgr_gas_T,IEEE4,disable_n2o)
-  Average(1,lgr_amb_T,IEEE4,disable_n2o)
-  Average(1,ugga_gas_T,IEEE4,disable_ugga)
+  Average(1,lgr_cell_T,IEEE4,disable_n2o)
+  Average(1,lgr_self_T,IEEE4,disable_n2o)
+  Average(1,ugga_cell_T,IEEE4,disable_ugga)
   Average(1,ugga_self_T,IEEE4,disable_ugga)
 EndTable
 
@@ -246,12 +246,12 @@ DataTable(biofiltro_runs,(run_flag <> run_state),-1)
   StdDev(1,lgr_N2O_dry,IEEE4,disable_n2o)
   Average(1,lgr_H2O,IEEE4,disable_n2o)
   StdDev(1,lgr_H2O,IEEE4,disable_n2o)
-  Average(1,lgr_gas_P,IEEE4,disable_n2o)
-  StdDev(1,lgr_gas_P,IEEE4,disable_n2o)
-  Average(1,lgr_gas_T,IEEE4,disable_n2o)
-  StdDev(1,lgr_gas_T,IEEE4,disable_n2o)
-  Average(1,lgr_amb_T,IEEE4,disable_n2o)
-  StdDev(1,lgr_amb_T,IEEE4,disable_n2o)
+  Average(1,lgr_cell_P,IEEE4,disable_n2o)
+  StdDev(1,lgr_cell_P,IEEE4,disable_n2o)
+  Average(1,lgr_cell_T,IEEE4,disable_n2o)
+  StdDev(1,lgr_cell_T,IEEE4,disable_n2o)
+  Average(1,lgr_self_T,IEEE4,disable_n2o)
+  StdDev(1,lgr_self_T,IEEE4,disable_n2o)
   
   Average(1,ugga_CH4_dry,IEEE4,disable_ugga)
   StdDev(1,ugga_CH4_dry,IEEE4,disable_ugga)
@@ -259,10 +259,10 @@ DataTable(biofiltro_runs,(run_flag <> run_state),-1)
   StdDev(1,ugga_CO2_dry,IEEE4,disable_ugga)
   Average(1,ugga_H2O,IEEE4,disable_ugga)
   StdDev(1,ugga_H2O,IEEE4,disable_ugga)
-  Average(1,ugga_gas_P,IEEE4,disable_ugga)
-  StdDev(1,ugga_gas_P,IEEE4,disable_ugga)
-  Average(1,ugga_gas_T,IEEE4,disable_ugga)
-  StdDev(1,ugga_gas_T,IEEE4,disable_ugga)
+  Average(1,ugga_cell_P,IEEE4,disable_ugga)
+  StdDev(1,ugga_cell_P,IEEE4,disable_ugga)
+  Average(1,ugga_cell_T,IEEE4,disable_ugga)
+  StdDev(1,ugga_cell_T,IEEE4,disable_ugga)
   Average(1,ugga_self_T,IEEE4,disable_ugga)
   StdDev(1,ugga_self_T,IEEE4,disable_ugga)
   
@@ -310,9 +310,9 @@ DisplayMenu("Trailer WA-25012E",-1)
     DisplayValue("Ambient", Tmpr)
     DisplayValue("AC", AC_Tmpr)
     DisplayValue("Logger", LoggerTmpr)
-    DisplayValue("N2O/CO cell", lgr_gas_T)
-    DisplayValue("N2O/CO amb", lgr_amb_T)
-    DisplayValue("CH4/CO2 cell", ugga_gas_T)
+    DisplayValue("N2O/CO cell", lgr_cell_T)
+    DisplayValue("N2O/CO amb", lgr_self_T)
+    DisplayValue("CH4/CO2 cell", ugga_cell_T)
     DisplayValue("CH4/CO2 amb", ugga_self_T)
   EndSubMenu
   SubMenu("N2O/CO")
@@ -321,9 +321,9 @@ DisplayMenu("Trailer WA-25012E",-1)
     DisplayValue("CO, ppb", lgr_CO)
     DisplayValue("CO (dry)", lgr_CO_dry)
     DisplayValue("H2O, ppm", lgr_H2O)
-    DisplayValue("Cell P", lgr_gas_P)
-    DisplayValue("Cell T", lgr_gas_T)
-    DisplayValue("Amb T", lgr_amb_T)
+    DisplayValue("Cell P", lgr_cell_P)
+    DisplayValue("Cell T", lgr_cell_T)
+    DisplayValue("Amb T", lgr_self_T)
     DisplayValue("Fit flag", n2oco(25))
   EndSubMenu
   SubMenu("CH4/CO2")
@@ -332,8 +332,8 @@ DisplayMenu("Trailer WA-25012E",-1)
     DisplayValue("CO2, ppm", ugga_CO2)
     DisplayValue("CO2 (dry)", ugga_CO2_dry)
     DisplayValue("H2O, ppm", ugga_H2O)
-    DisplayValue("Cell P", ugga_gas_P)
-    DisplayValue("Cell T", ugga_gas_T)
+    DisplayValue("Cell P", ugga_cell_P)
+    DisplayValue("Cell T", ugga_cell_T)
     DisplayValue("Self T", ugga_self_T)
     DisplayValue("rd0, usec", ugga(19))
     DisplayValue("rd1, usec", ugga(21))
