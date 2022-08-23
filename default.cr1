@@ -164,13 +164,13 @@ Units longitude_a = degrees
 Units longitude_b = minutes
 Units speed = m/s
 Units course = degrees
-Units magnetic_variation = unitless
-Units fix_quality = unitless
-Units nmbr_satellites = unitless
+Units magnetic_variation = degrees
+Units fix_quality = arb
+Units nmbr_satellites = count
 Units altitude = m
 Units pps = ms
 Units dt_since_gprmc = s
-Units gps_ready = unitless
+Units gps_ready = arb
 Units max_clock_change = ms
 Units nmbr_clock_change = samples
 
@@ -301,6 +301,8 @@ EndTable
 DataTable(biofiltro_gps,True,-1)
   CardOut(0,DAYS_DATA*1440)
   DataInterval(0,60,Sec,10)
+  Average(1,UTC_OFFSET,IEEE4,UTC_OFFSET=NAN)
+    FieldNames("UTC_OFFSET")
   Sample(15,gps_data(1),IEEE4)
 EndTable
 
