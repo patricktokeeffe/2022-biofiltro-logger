@@ -432,6 +432,7 @@ BeginProg
   Scan(1,Min,1,0)
     GPS(gps_data(1),GPS_COM,UTC_OFFSET*3600,MAX_DRIFT,nmea_sentence(1))
     CallTable(biofiltro_gps)
+    NetworkTimeProtocol("",UTC_OFFSET,MAX_DRIFT)
   NextScan
 EndProg
 
