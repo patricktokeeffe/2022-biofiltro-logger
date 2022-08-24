@@ -226,6 +226,7 @@ DataTable(biofiltro_runs,(run_flag <> run_state),-1)
   Average(1,Tmpr,IEEE4,Tmpr=NAN)
   Average(1,RH,IEEE4,RH=NAN)
   Average(1,Press,IEEE4,Press=NAN)
+  StdDev(1,Press,IEEE4,Press=NAN)
   'XXXX HINT halved to compensate for calling table twice/update
   Totalize(1,Rain_amt/2,IEEE4,Rain_amt=NAN)
     FieldNames("Rain_amt_Tot")
