@@ -382,7 +382,7 @@ DisplayMenu("Trailer WA-25012E",-1)
   DisplayValue("PowerIn, Vdc", PowerIn)
 EndMenu
 
-
+PipeLineMode
 BeginProg
   SerialOpen(N2O_COM,N2O_BAUD,N2O_FMT,0,N2O_BUFF)
   SerialOpen(CH4_COM,CH4_BAUD,CH4_FMT,0,CH4_BUFF)
@@ -426,11 +426,7 @@ BeginProg
   Scan (5,Sec,0,0)
     PanelTemp(LoggerTmpr,250)
     Battery(PowerIn)
-    If (PowerIn > 12.6) Then
-      SW12(True) 'allow WXT heating
-    Else
-      SW12(False) 'disable on battery
-    EndIf
+    SW12(PowerIn > 12.6)
     TCDiff(AC_Tmpr,1,mV2_5,AC_TYPEK_DF,TypeK,LoggerTmpr,True,0,_60Hz,1,0)
     
     SDI12Recorder(WXT(1),WXT_COM,WXT_SDI,"RC!",1,0,-1)
