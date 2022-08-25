@@ -116,6 +116,23 @@ be used instead. The main disadvantages of the keyboard display are (1) lack
 of interactive data plotting, and (2) being physically constrained by the
 display's cable length.
 
+### RealVNC
+
+It is also recommended to have [VNC Viewer][10] or other VNC-compatible client
+for remotely viewing and controlling the two trace gas analyzers. Launch the
+client and create a new connection for each one:
+
+| Device | IP Address | Port | Password&dagger; |
+|:-------|:----------:|:----:|:----------------:|
+| N2O/CO analyzer | `192.168.13.51` | `5900` | `lgrvnc` |
+| CH4/CO2 analyzer | `192.168.13.52` | `5900` | `lgrvnc` |
+
+&dagger;If the default doesn't work, check the notes in the device user manual.
+
+[<img src="img/vnc-n2o_co.jpeg" alt="VNC Viewer connected to N2O/CO analyzer" width="600">](img/vnc-n2o_co.jpeg)
+
+[<img src="img/vnc-ugga.jpeg" alt="VNC Viewer connected to CH4/CO2 analyzer" width="600">](img/vnc-ugga.jpeg)
+
 ### Real-time Monitoring
 
 The recommended method for viewing individual data values is the **Current** interface of LoggerLink.
@@ -129,7 +146,10 @@ The recommended method for viewing individual data values is the **Current** int
 	* Choose `Public` for the most recent values of run duration, internal datalogger temperature, and temperature of air coming from the AC unit
 3. Select relevant fields, as desired.
 
-[ screenshots ]
+[<img src="img/current-public.jpeg" alt="Public table via LoggerLink Current screen" width="600">](img/current-public.jpeg)
+
+[<img src="img/current-1hz.jpeg" alt="Real-time GHG data via LoggerLink Current screen" width="600">](img/current-1hz.jpeg)
+
 
 ### Real-time Plotting
 
@@ -143,7 +163,12 @@ The recommended method for plotting data is the **Historical** interface of Logg
 	* Set line width / color / styling
 	* Set point size / color / shape
 
-[ screenshots ]
+[<img src="img/history-tmpr.jpeg" alt="Plotting temperature data via LoggerLink Historical screen" width="600">](img/history-tmpr.jpeg)
+
+[<img src="img/history-n2o_co.jpeg" alt="Plotting N2O/CO data via LoggerLink Historical screen" width="600">](img/history-n2o_co.jpeg)
+
+[<img src="img/history-ugga.jpeg" alt="Plotting CH4/CO2 data via LoggerLink Historical screen" width="600">](img/history-ugga.jpeg)
+
 
 ### Triggering Sample Runs
 
@@ -194,7 +219,7 @@ capacity, newly generated records will overwrite the oldest records in storage.
 
 Statistical summary of data captured during a user-triggered run events.
 Duration of each data record is reported in field `run_duration`.
-Up to 100events are stored before old data is overwritten.
+Up to 100 events are stored before old data is overwritten.
 
 | Field name | Units | Instruction | Description|
 |:-----------|:------|:------------|:-----------|
@@ -386,11 +411,12 @@ Connect the **beige** serial cable on the `COM3` port of the datalogger to the
 serial data output port of the N<sub>2</sub>O/CO analyzer using a null modem
 RS-232 cable or standard cable and null modem adapter. 
 
-| Description     | Color  | RS-232 pin | CR1000 |
-|-----------------|--------|:----------:|:------:|
-| serial transmit | brown  | &nbsp;          | &nbsp;    |
-| serial receive  | | | |
-| serial ground   | | | |
+| Description     | Color  | CR1000 |
+|-----------------|--------|:------:|
+| serial transmit | brown  | `C5`   |
+| serial receive  | white  | `C6`   |
+| serial ground   | yellow | `G`    |
+| shield          | clear  | `G`    |
 
 ### Los Gatos Research CH<sub>4</sub>/CO<sub>2</sub>/H<sub>2</sub>O analyzer
 
@@ -398,11 +424,11 @@ Connect the **black** serial cable on the `COM2` port of the datalogger to the
 serial data output port of the CH<sub>4</sub>/CO<sub>2</sub> analyzer using a
 null modem RS-232 cable or standard cable and null modem adapter. 
 
-| Description     | Color  | RS-232 pin | CR1000 |
-|-----------------|--------|:----------:|:------:|
-| serial transmit | brown  | &nbsp;          | &nbsp;    |
-| serial receive  | | | |
-| serial ground   | | | |
+| Description     | Color  | CR1000 |
+|-----------------|--------|:------:|
+| serial transmit | brown  | `C3`   |
+| serial receive  | blue   | `C4`   |
+| serial ground   | green/yellow | `G` |
 
 ### WXT510
 
@@ -511,19 +537,23 @@ settings to comply with best practices and company guidelines.
 > *(\*) the modem presently doesn't have an active data plan, so there's no
 > internet connection but it still serves the important role of DHCP server*
 
+Verify the modem issues DHCP IP addresses using the default range values:
+
 * LAN > Ethernet
     * Device IP: `192.168.13.31`
     * IP Netmask: `255.255.255.0`
     * DHCP Starting IP: `192.168.13.100`
     * DHCP Ending IP: `192.168.13.150`
 
-Also, assign DHCP reservations for the logger and analyzers so connections in apps like LoggerLink and VNC Connect remain valid even if the network gets restarted.
+Then assign DHCP reservations to ensure devices obtain the same IP address even
+if the network gets restarted:
 
 | Device | IP reservation |
 |--------|----------------|
-| CR1000 logger | 192.168.13.**50** |
-| LGR N2O/CO    | 192.168.13.**51** |
-| LGR CH4/CO2   | 192.168.13.**52** |
+| Wireless radio | 192.168.13.**10** |
+| CR1000 logger  | 192.168.13.**50** |
+| LGR N2O/CO     | 192.168.13.**51** |
+| LGR CH4/CO2    | 192.168.13.**52** |
 
 ### Picostation M2 wireless radio
 
@@ -532,15 +562,13 @@ connect to the trailer LAN. The wireless users obtain an IP address from the
 modem and appear on the same subnet as the logger, modem, etc. 
 
 * Network
-    * Network Role > Mode: `Bridge`
+    * Network Mode: `Bridge`
+    * Management IP Address: `DHCP`
+    * DHCP Fallback: `192.168.13.10`
 * Wireless
-    * SSID:
-    * WPA2-PSK:
-    * Channel width
-    * &nbsp;
-    * &nbsp;
-    * &nbsp;
-
+    * SSID: `WSU Trailer 25012E`
+    * WPA2-PSK: `field_research`
+    * Channel width: `20 MHz`
 
 
 ## Licensing
@@ -561,6 +589,7 @@ modem and appear on the same subnet as the logger, modem, etc.
 [7]: https://www.licor.com/env/products/light/accessories.html
 [8]: https://www.campbellsci.com/gps16x-hvs
 [9]: https://www.campbellsci.com/cr1000kd
+[10]: https://www.realvnc.com/en/connect/download/viewer/
 
 * Campbell Scientific. *CRBasic Program Reference: WindVector*. Revision *CR1000.Std.32.05*. 
 
